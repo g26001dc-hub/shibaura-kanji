@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>倭国漢字演習伝 〜古代和風手書き学習〜</title>
+    <style>
+        :root {
+            --bg-color: #f2ebd9; 
+            --panel-bg: #fcfaf2; 
+            --border-color: #3a2414; 
+            --accent-red: #8b0000; 
+            --text-color: #1a110b;
+        }
+
+        body {
+            font-family: 'Hiragino Mincho ProN', 'MS Mincho', serif;
+            background-color: #1c110a;
+            background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><path d="M0,30 Q15,0 30,30 T60,30" fill="none" stroke="%232b1a0e" stroke-width="1"/></svg>');
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        #game-container {
+            background-color: var(--bg-color);
+            border: 6px double var(--border-color);
+            border-radius: 2px;
+            padding: 20px;
+            width: 100%;
+            max-width: 1150px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+            box-sizing: border-box;
+        }
+
+        /* 🏡 ホーム画面 */
+        #home-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+        }
+        .main-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--accent-red);
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+            margin-bottom: 5px;
+            letter-spacing: 4px;
+            text-align: center;
+        }
+        .sub-title {
+            font-size: 15px;
+            color: #4a3b2c;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+
+        /* 🎖️ 称号表示板 */
+        .title-badge-box {
+            background: linear-gradient(135deg, #2c1a0e, #150a05);
+            color: #f1c40f;
+            border: 2px solid #f1c40f;
+            padding: 8px 25px;
+            font-size: 15px;
+            font-weight: bold;
+            margin-bottom: 25px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            border-radius: 3px;
+            letter-spacing: 1px;
+        }
+
+        .section-hd { font-size: 18px; font-weight: bold; margin-bottom: 12px; border-left: 5px solid var(--accent-red); padding-left: 10px; align-self: flex-start; letter-spacing: 1px; }
+
+        /* 🏛️ ステージグリッド */
+        .stage-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+            max-width: 950px;
+            margin-bottom: 30px;
+        }
+        @media (max-width: 768px) { .stage-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 480px) { .stage-grid { grid-template-columns: 1fr; } }
+        
+        .stage-card {
+            background: var(--panel-bg);
+            border: 2px solid var(--border-color);
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 3px 3px 6px rgba(0,0,0,0.15);
+        }
+        .stage-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 5px 5px 12px rgba(0,0,0,0.3);
+            background: #fffdf4;
+            border-color: var(--accent-red);
+        }
+        .stage-card.clear-done {
+            border-color: #27ae60;
+            background: #f0fbf4;
+        }
+        .stage-card.secret-stg {
+            background: #fff2f2;
+            border: 2px dashed #c0392b;
+            animation: pulse-border 2s infinite alternate;
+        }
+        @keyframes pulse-border {
+            from { border-color: #c0392b; box-shadow: 0 0 4px #c0392b; }
+            to { border-color: #ff0000; box-shadow: 0 0 12px #ff0000; }
+        }
+        .stage-num { font-size: 11px; color: var(--accent-red); font-weight: bold; margin-bottom: 5px; }
+        .stage-name { font-size: 14px; font-weight: bold; margin-bottom: 8px; border-bottom: 1px dashed var(--border-color); padding-bottom: 5px; line-height: 1.3; }
+        .clear-badge { font-size: 11px; color: #27ae60; font-weight: bold; }
+
+        /* ⏱️ タイムアタック */
+        .rta-container {
+            display: grid;
+            grid-template-columns: 1fr 1.3fr;
+            gap: 20px;
+            width: 100%;
+            max-width: 950px;
+            margin-bottom: 25px;
+        }
+        @media (max-width: 768px) { .rta-container { grid-template-columns: 1fr; } }
+
+        .rta-panel {
+            background: linear-gradient(135deg, #4a1111, #250505);
+            color: #f1c40f;
+            border: 2px solid #f1c40f;
+            border-radius: 4px;
+            padding: 15px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .rta-btn {
+            background: #f1c40f;
+            color: #4a1111;
+            border: none;
+            padding: 10px 25px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .rta-btn:hover { background: #f39c12; }
+
+        .ranking-panel {
+            background: var(--panel-bg);
+            border: 2px solid var(--border-color);
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        .ranking-title { font-size: 15px; font-weight: bold; color: var(--accent-red); border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 8px; text-align: center; }
+        .ranking-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .ranking-table th, .ranking-table td { padding: 6px 8px; text-align: left; }
+        .ranking-table tr:nth-child(even) { background: rgba(58,36,20,0.06); }
+
+        /* 🌐 常時同期共有パネル */
+        .sync-share-panel {
+            background-color: #f7f3e8;
+            border: 2px solid var(--accent-red);
+            padding: 15px;
+            width: 100%;
+            max-width: 950px;
+            box-sizing: border-box;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        /* 🛠️ エディタ */
+        .home-admin-panel {
+            background-color: #ebe3d1;
+            border: 2px dashed var(--border-color);
+            padding: 20px;
+            width: 100%;
+            max-width: 950px;
+            box-sizing: border-box;
+        }
+        .home-admin-panel h3 { margin: 0 0 12px 0; font-size: 15px; color: var(--accent-red); border-bottom: 2px solid #b5a383; padding-bottom: 6px; }
+        .admin-auth-zone { text-align: center; padding: 10px; }
+        .admin-content-zone { display: none; }
+        .admin-select-wrapper { margin-bottom: 15px; font-weight: bold; font-size: 14px; }
+        .admin-select { background: #fff; border: 1px solid var(--border-color); padding: 6px 12px; font-size: 14px; color: var(--accent-red); font-weight: bold; }
+        .admin-flex { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+        .admin-input { background: #fff; border: 1px solid var(--border-color); padding: 8px; font-size: 14px; flex: 1; min-width: 150px; }
+        .add-btn { background: #27ae60; color: white; border: none; padding: 8px 20px; font-weight: bold; cursor: pointer; }
+        #word-list { max-height: 140px; overflow-y: auto; background: #fff; padding: 10px; border: 1px solid #ccc; margin-bottom: 15px; }
+        .word-item { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 8px; border-bottom: 1px solid #eee; align-items: center; }
+        .del-btn { background: #c0392b; color: white; border: none; padding: 4px 10px; cursor: pointer; }
+
+        /* ⚔️ 戦闘画面 */
+        #battle-screen { display: none; position: relative; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 3px double var(--border-color); padding-bottom: 10px; }
+        .title-banner { background-color: var(--panel-bg); border: 2px solid var(--border-color); padding: 8px 20px; font-size: 15px; font-weight: bold; text-align: center; min-width: 180px; }
+        .wave-counter { font-size: 15px; color: var(--accent-red); font-weight: bold; display: block; margin-top: 2px; }
+        .status-scroll { background: #fffdf9; border: 2px solid var(--border-color); padding: 6px 15px; width: 240px; font-size: 13px; }
+        .hp-bar-outer { background: #ccbfad; height: 12px; border: 1px solid #5c4033; overflow: hidden; margin-top: 4px; }
+        .hp-bar-inner { height: 100%; width: 100%; transition: width 0.3s ease; }
+        .player-hp { background: linear-gradient(to right, #27ae60, #1e7e43); }
+        .enemy-hp { background: linear-gradient(to right, #d35400, #990000); }
+        .enemy-hp.boss-hp { background: linear-gradient(to right, #9b59b6, #7f007f); }
+
+        #encounter-alert {
+            display: none;
+            position: absolute;
+            top: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(139, 0, 0, 0.95);
+            color: #f1c40f;
+            border: 2px solid #f1c40f;
+            padding: 10px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            z-index: 50;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            letter-spacing: 2px;
+            white-space: nowrap;
+            animation: flash-alert 0.5s ease 3 alternate;
+        }
+        @keyframes flash-alert { from { opacity: 0.3; } to { opacity: 1; } }
+
+        .main-battlefield { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px; }
+        @media (max-width: 950px) { .main-battlefield { grid-template-columns: 1fr; } }
+
+        .battle-panel { background-color: var(--panel-bg); border: 2px solid var(--border-color); display: flex; flex-direction: column; }
+        .panel-header { background-color: #dcd1ba; border-bottom: 2px solid var(--border-color); text-align: center; font-weight: bold; padding: 7px; font-size: 14px; }
+        .panel-body { padding: 15px; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; box-sizing: border-box; width: 100%; }
+
+        .enemy-sprite-box { width: 100%; height: 220px; display: flex; justify-content: center; align-items: center; margin: 10px 0; background: linear-gradient(#ede6d4, #decfa6); border: 1px solid #a89970; overflow: hidden; }
+        .enemy-svg { width: 100%; height: 100%; max-height: 210px; object-fit: contain; }
+        .enemy-scroll-name { background: #1a110b; color: #f5f2eb; border: 1px solid var(--border-color); padding: 4px 25px; font-size: 14px; font-weight: bold; letter-spacing: 1px; }
+
+        .question-box { font-size: 26px; font-weight: bold; color: var(--accent-red); margin: 15px 0; background: #fff; border: 2px solid var(--border-color); width: 80%; padding: 15px 5px; }
+        .furigana-sub { font-size: 14px; color: #666; margin-top: 4px; }
+
+        .canvas-wrapper { border: 3px double var(--border-color); background: #fff; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); margin-bottom: 10px; }
+        #paint-canvas { touch-action: none; cursor: crosshair; display: block; }
+        .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; }
+        .game-btn { background: #e8ded1; border: 1px solid var(--border-color); padding: 8px 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .game-btn:hover { background: #dcd1ba; }
+        .submit-btn { background: #27ae60; color: white; border: none; }
+        .attack-trigger-btn { background: var(--accent-red); color: white; border: none; font-size: 13px; grid-column: span 4; padding: 10px; margin-top: 5px; font-weight: bold; }
+
+        .log-panel { background: var(--panel-bg); border: 2px solid var(--border-color); padding: 10px; height: 100px; }
+        .log-box { height: 100%; overflow-y: auto; font-size: 12px; line-height: 1.5; }
+        .log-player { color: #1e7e43; font-weight: bold; }
+        .log-enemy { color: #c0392b; font-weight: bold; }
+        .log-system { color: #2980b9; }
+
+        .modal-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 100; }
+        .modal-window { background: var(--panel-bg); border: 4px double var(--border-color); padding: 25px; width: 90%; max-width: 450px; text-align: center; }
+        .ans-status-header { font-size: 22px; font-weight: bold; margin-bottom: 10px; }
+        .ans-status-correct { color: #27ae60; }
+        .ans-status-wrong { color: #c0392b; }
+        .ans-display-box { background: #fff; border: 2px solid var(--border-color); padding: 15px; margin: 15px 0; }
+        .ans-large-kanji { font-size: 48px; font-weight: bold; color: var(--text-color); margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- 🏡 ホーム画面 -->
+    <div id="home-screen">
+        <div class="main-title">倭国漢字演習伝</div>
+        <div class="sub-title">〜古代和風手書き学習〜</div>
+        <div class="title-badge-box" id="user-title-display">現在の称号: 【新米の筆生】</div>
+
+        <div class="section-hd">📖 漢字演習の章（通常試練）</div>
+        <div class="stage-grid" id="stage-buttons-container"></div>
+
+        <div class="section-hd">⚔️ タイムアタック（連続討伐）</div>
+        <div class="rta-container">
+            <div class="rta-panel">
+                <div style="font-size:16px; font-weight:bold; margin-bottom:8px;">🔥 無限の墨陣</div>
+                <div style="font-size:12px; line-height:1.4; opacity:0.9;">制限時間【60秒】で何問解けるか！難読漢字を連続討伐し、討伐番付に刻め！</div>
+                <button class="rta-btn" onclick="startTimeAttackMode()">⚔️ タイムアタック開始</button>
+            </div>
+            <div class="ranking-panel">
+                <div class="ranking-title">🏆 討伐番付（歴代最高記録）</div>
+                <table class="ranking-table">
+                    <thead><tr><th>順位</th><th>名号（氏名）</th><th>記録</th></tr></thead>
+                    <tbody id="ranking-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section-hd">🌐 リアルタイム共有URL（動的同期）</div>
+        <div class="sync-share-panel">
+            <p style="font-size:13px; color:#4a3b2c; margin:0 0 10px 0; font-weight:bold;">
+                このURLを全員で共有すると、編集された漢字データやランキングが<br>どの端末から開いても常にリアルタイムで同期・統一されます。
+            </p>
+            <input type="text" id="share-url-box" readonly style="width:80%; max-width:400px; padding:6px; font-size:12px; text-align:center; margin-bottom:10px;">
+            <br>
+            <button class="game-btn" style="background:var(--accent-red); color:white; padding:8px 20px; font-size:13px;" onclick="copySyncURL()">🔗 同期用固定URLをコピー</button>
+            <button class="game-btn" style="background:#27ae60; color:white; padding:8px 20px; font-size:13px;" onclick="fetchCloudData()">🔄 最新データに今すぐ更新</button>
+        </div>
+
+        <div class="home-admin-panel">
+            <h3>🛠️ 漢字問題・ステージ編集（管理者用）</h3>
+            <div class="admin-auth-zone" id="admin-auth-zone">
+                <input type="password" id="admin-password-input" class="admin-input" style="max-width:200px;" placeholder="合言葉を入力">
+                <button class="add-btn" onclick="authAdmin()">解除</button>
+            </div>
+            <div class="admin-content-zone" id="admin-content-zone">
+                <div class="admin-select-wrapper">
+                    編集対象: 
+                    <select id="editor-stage-selector" class="admin-select" onchange="onEditorStageChange()"></select>
+                </div>
+                <div class="admin-flex">
+                    <input type="text" id="add-kanji" class="admin-input" placeholder="漢字 (例: 卑弥呼)">
+                    <input type="text" id="add-yomi" class="admin-input" placeholder="読み (例: ひみこ)">
+                    <input type="text" id="add-roma" class="admin-input" placeholder="ローマ字 (例: Hi-mi-ko)">
+                    <button class="add-btn" onclick="addQuizItem()">追加</button>
+                </div>
+                <div id="word-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⚔️ 戦闘画面 -->
+    <div id="battle-screen">
+        <div id="encounter-alert">⚠️ 新たな妖魔が姿を現した！</div>
+
+        <header>
+            <div class="title-banner">
+                <span id="stage-title-banner">演習</span>
+                <span class="wave-counter" id="wave-counter">第 1 陣 / 全 4 陣</span>
+            </div>
+            <div id="battle-timer-banner" style="display:none; font-size:18px; font-weight:bold; color:var(--accent-red);">
+                <span id="ta-timer-display">⏱️ 残り: 60.0秒</span>
+                <span id="ta-score-display" style="margin-left:15px; color:#27ae60;">🏆 討伐: 0問</span>
+            </div>
+            <div style="text-align:right;">
+                <div class="status-scroll">
+                    <strong>大和武尊 (自分)</strong>
+                    <div class="hp-bar-outer"><div class="hp-bar-inner player-hp" id="player-hp-bar"></div></div>
+                    <span id="player-hp-text">HP: 2000/2000</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-battlefield">
+            <div class="battle-panel">
+                <div class="panel-header" id="enemy-top-title">対峙する妖魔</div>
+                <div class="panel-body">
+                    <div class="enemy-scroll-name" id="enemy-panel-name">敵名</div>
+                    <div class="enemy-sprite-box" id="enemy-sprite-container"></div>
+                    <div style="width:100%;">
+                        <div class="hp-bar-outer"><div class="hp-bar-inner enemy-hp" id="enemy-hp-bar"></div></div>
+                        <span id="enemy-hp-text" style="font-size:12px; font-weight:bold;">HP: 800/800</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="battle-panel">
+                <div class="panel-header">お題（漢字書き取り）</div>
+                <div class="panel-body">
+                    <div style="font-size:12px; color:#666;" id="mode-rule-text">ルール適用中</div>
+                    <div class="question-box">
+                        <div id="target-roma">Roma</div>
+                        <div class="furigana-sub" id="target-hint-yomi">yomi</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="battle-panel">
+                <div class="panel-header">手書き漢字入力</div>
+                <div class="panel-body">
+                    <div class="input-preview" id="recognize-preview" style="font-size:15px; font-weight:bold; margin-bottom:5px;">入力中の文字: ＿</div>
+                    <div class="canvas-wrapper"><canvas id="paint-canvas"></canvas></div>
+                    <div class="btn-grid">
+                        <button class="game-btn" onclick="undoCanvas()">1画戻す</button>
+                        <button class="game-btn" onclick="clearCanvas()">書き直す</button>
+                        <button class="game-btn submit-btn" onclick="recognizeKanji()">文字決定</button>
+                        <button class="game-btn" onclick="deleteChar()">1文字削除</button>
+                        <button class="game-btn attack-trigger-btn" onclick="launchAttack()">⚔️ 決定した漢字で攻撃！</button>
+                        <button class="game-btn" style="grid-column: span 4; margin-top:4px; background:#555; color:white;" onclick="returnToHome()">🏃 退却（ホームへ）</button>
+                    </div>
+                    <div style="font-size:11px; margin-top:8px; color:#555;" id="stroke-counter">画数: 0画</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="log-panel"><div class="log-box" id="log-box"></div></div>
+    </div>
+</div>
+
+<!-- モーダル群 -->
+<div id="answer-result-screen" class="modal-screen">
+    <div class="modal-window">
+        <div id="ans-status-text" class="ans-status-header"></div>
+        <p id="ans-log-comment" style="font-size:14px; color:#333; margin:5px 0;"></p>
+        <div class="ans-display-box">
+            <div id="ans-large-kanji" class="ans-large-kanji"></div>
+            <div id="ans-yomi-sub" style="font-size:16px; color:#555;"></div>
+        </div>
+        <button class="game-btn" style="padding:8px 40px; font-size:14px; background:#4a3b2c; color:white;" onclick="closeAnswerModal()">進む</button>
+    </div>
+</div>
+
+<div id="result-screen" class="modal-screen">
+    <div class="modal-window">
+        <h2 id="result-title" style="font-size:24px; color:var(--accent-red);">演習終了</h2>
+        <p id="result-text" style="white-space: pre-wrap; font-size:15px; line-height:1.6;"></p>
+        <button class="game-btn" style="padding:10px 35px; font-size:14px; background:var(--accent-red); color:white;" onclick="nextStageOrReset()">ホーム画面へ戻る</button>
+    </div>
+</div>
+
+<script>
+    const ADMIN_PASSWORD = "aomine0317";
+    const API_MASTER_KEY = "$2a$10$8v8mD.P90Gz08S1/i13Cie0c5Trm/NfgN4.Xp4bF5vUq98kY0G8u2"; 
+
+    let stagesData = [
+        { id: 1, stageName: "第一章：大和黎明の試練", bossName: "武芸の化身「剣豪大和」", quizList: [{ kanji: "大和", yomi: "やまと", roma: "Yama-to" }, { kanji: "飛鳥", yomi: "あすか", roma: "Asu-ka" }, { kanji: "勾玉", yomi: "まがたま", roma: "Maga-tama" }] },
+        { id: 2, stageName: "第二章：百妖夜行の怪異", bossName: "大触手「土蜘蛛の妖」", quizList: [{ kanji: "麒麟", yomi: "きりん", roma: "Ki-rin" }, { kanji: "土蜘蛛", yomi: "つちぐも", roma: "Tsuchi-gumo" }, { kanji: "狐", yomi: "きつね", roma: "Kitsune" }] },
+        { id: 3, stageName: "第三章：出雲荒神の聖域", bossName: "荒ぶる土地神「出雲の荒神」", quizList: [{ kanji: "出雲", yomi: "いずも", roma: "Izu-mo" }, { kanji: "筑紙", yomi: "つくし", roma: "Tsukushi" }, { kanji: "陸奥", yomi: "むつ", roma: "Mutsu" }] },
+        { id: 4, stageName: "第四章：暗黒神楽の儀式", bossName: "呪詛を紡ぐ「神楽の巫女」", quizList: [{ kanji: "鳥居", yomi: "とりい", roma: "Torii" }, { kanji: "神楽", yomi: "かぐら", roma: "Kagura" }, { kanji: "注連縄", yomi: "しめなわ", roma: "Shime-nawa" }] },
+        { id: 5, stageName: "第五章：神代伝承の神域", bossName: "高天原の主「天照と須佐之男」", quizList: [{ kanji: "天照", yomi: "あまてらす", roma: "Ama-terasu" }, { kanji: "須佐之男", yomi: "すさのお", roma: "Susa-no-o" }, { kanji: "因幡白兎", yomi: "いなばのしろうさぎ", roma: "Inaba-no-shirousagi" }] },
+        { id: 6, stageName: "第六章：古の遺物と守護兵", bossName: "不壊の防壁「埴輪の守護兵」", quizList: [{ kanji: "青銅器", yomi: "せいどうき", roma: "Seidou-ki" }, { kanji: "埴輪", yomi: "はにわ", roma: "Haniwa" }, { kanji: "高床倉庫", yomi: "たかゆかそうこ", roma: "Takayuka-souko" }] },
+        { id: 7, stageName: "第七章：黄泉津大神の極限深淵", bossName: "常闇の創造神「黄泉津大神 伊邪那美」", quizList: [{ kanji: "黄泉比良坂", yomi: "よみのひらさか", roma: "Yomi-no-hirasaka" }, { kanji: "迦具土", yomi: "かぐつち", roma: "Kagutsuchi" }, { kanji: "伊邪那美", yomi: "いざなみ", roma: "Izanami" }, { kanji: "天之御中主", yomi: "あめのみなかぬし", roma: "Ame-no-minakanushi" }], isSecret: true }
+    ];
+
+    let hardQuizList = [
+        { kanji: "魑魅魍魎", yomi: "ちみもうりょう", roma: "Chimi-mou-ryou" },
+        { kanji: "憂鬱", yomi: "ゆううつ", roma: "Yuu-utsu" },
+        { kanji: "薔薇", yomi: "ばら", roma: "Bara" },
+        { kanji: "躊躇", yomi: "ちゅうちょ", roma: "Chuu-cho" },
+        { kanji: "神籬", yomi: "ひもろぎ", roma: "Himorogi" }
+    ];
+
+    let clearedStages = {};
+    let currentTitle = "新米の筆生";
+    let rankingList = []; 
+    let currentBinId = null;
+
+    let isTimeAttack = false;
+    let taTimeLeft = 60.0; let taScore = 0; let taInterval = null;
+    let currentStageObj = null; let currentStageIndex = 0;
+    let playerHp = 2000; const playerMaxHp = 2000;
+    let enemyHp = 800; let enemyMaxHp = 800;
+    let currentQuizIndex = 0; let currentInputString = "";
+    let currentWave = 1; const maxWaves = 4;
+    
+    let canvas, ctx, drawing = false; let currentStroke = [], allStrokes = [], undoHistory = [];
+
+    window.onload = function() {
+        canvas = document.getElementById("paint-canvas"); ctx = canvas.getContext("2d");
+        canvas.width = 220; canvas.height = 220; ctx.lineWidth = 7; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#111111";
+        canvas.addEventListener("mousedown", startDraw); canvas.addEventListener("mousemove", draw); canvas.addEventListener("mouseup", endDraw);
+        canvas.addEventListener("touchstart", (e) => { e.preventDefault(); startDraw(e.touches[0]); });
+        canvas.addEventListener("touchmove", (e) => { e.preventDefault(); draw(e.touches[0]); });
+        canvas.addEventListener("touchend", endDraw);
+
+        // 🔗 URLパラメータ（?id=xxx）の確認と同期処理
+        const urlParams = new URLSearchParams(window.location.search);
+        currentBinId = urlParams.get('id');
+
+        if (currentBinId) {
+            fetchCloudData();
+        } else {
+            // URLにIDが無ければ新規クラウドDBを作成してURLに付与
+            createNewCloudBin();
+        }
+
+        updateTitleAndDisplay();
+        buildHomeScreen();
+        buildEditorSelector();
+    };
+
+    // 🌐 クラウド（JSONBin API）に全データを登録して固定IDを取得する
+    function createNewCloudBin() {
+        const payload = { stages: stagesData, hard: hardQuizList, ranking: rankingList };
+        fetch('https://api.jsonbin.io/v3/b', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': API_MASTER_KEY
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.metadata && data.metadata.id) {
+                currentBinId = data.metadata.id;
+                updateUrlWithBinId(currentBinId);
+            }
+        })
+        .catch(err => console.error("クラウド同期領域の初期化に失敗しました", err));
+    }
+
+    // 🌐 クラウドから最新データを取得（読み込み）
+    function fetchCloudData() {
+        if (!currentBinId) return;
+        fetch(`https://api.jsonbin.io/v3/b/${currentBinId}/latest`, {
+            method: 'GET',
+            headers: { 'X-Master-Key': API_MASTER_KEY }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.record) {
+                if (data.record.stages) stagesData = data.record.stages;
+                if (data.record.hard) hardQuizList = data.record.hard;
+                if (data.record.ranking) rankingList = data.record.ranking;
+                
+                updateUrlWithBinId(currentBinId);
+                updateTitleAndDisplay();
+                buildHomeScreen();
+                buildEditorSelector();
+            }
+        })
+        .catch(err => console.error("データ取得に失敗しました", err));
+    }
+
+    // 🌐 クラウドへ全データを送信して更新（自動更新）
+    function syncToCloud() {
+        if (!currentBinId) return;
+        const payload = { stages: stagesData, hard: hardQuizList, ranking: rankingList };
+        fetch(`https://api.jsonbin.io/v3/b/${currentBinId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': API_MASTER_KEY
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(() => {
+            updateTitleAndDisplay();
+        })
+        .catch(err => console.error("クラウド同期更新に失敗しました", err));
+    }
+
+    // URLの見た目を更新（リロードしてもパラメータ維持）
+    function updateUrlWithBinId(id) {
+        const baseUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+        const fullUrl = `${baseUrl}?id=${id}`;
+        window.history.replaceState({}, document.title, fullUrl);
+        document.getElementById("share-url-box").value = fullUrl;
+    }
+
+    function copySyncURL() {
+        const urlBox = document.getElementById("share-url-box");
+        urlBox.select();
+        navigator.clipboard.writeText(urlBox.value).then(() => {
+            alert("🔗 同期専用URLをコピーしました！\nこのURLを開くと、誰からでも全く同じ最新データで遊ぶことができます。");
+        }).catch(() => {
+            prompt("以下のURLをコピーして共有してください：", urlBox.value);
+        });
+    }
+
+    function updateTitleAndDisplay() {
+        let practiceCount = 0;
+        for(let i=1; i<=6; i++) { if(clearedStages[i]) practiceCount++; }
+        
+        let maxScore = 0;
+        if(rankingList.length > 0) {
+            maxScore = Math.max(...rankingList.map(r => r.score));
+        }
+
+        if (clearedStages[7]) {
+            currentTitle = "古代の伝承神「神代の墨聖」";
+        } else if (practiceCount === 6) {
+            currentTitle = "真の隠者「大和の守護者」";
+        } else if (practiceCount >= 3) {
+            currentTitle = "中堅の筆頭剣豪";
+        } else if (maxScore >= 8) {
+            currentTitle = "韋駄天の神筆";
+        } else {
+            currentTitle = "新米の筆生";
+        }
+
+        document.getElementById("user-title-display").innerText = `現在の称号: 【${currentTitle}】`;
+        
+        const tbody = document.getElementById("ranking-tbody");
+        tbody.innerHTML = "";
+        
+        rankingList.sort((a, b) => b.score - a.score);
+        const displayList = rankingList.slice(0, 5);
+        displayList.forEach((rank, idx) => {
+            let medal = idx === 0 ? "🥇" : (idx === 1 ? "🥈" : (idx === 2 ? "🥉" : `${idx + 1}位`));
+            let userName = rank.name ? rank.name : "名無しの剣豪";
+            tbody.innerHTML += `<tr><td>${medal}</td><td><strong>${userName}</strong> <span style="font-size:11px; color:#666;">【${rank.title}】</span></td><td><strong>${rank.score} 問</strong></td></tr>`;
+        });
+        
+        if (rankingList.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#888;">番付記録なし</td></tr>`;
+        }
+    }
+
+    function buildHomeScreen() {
+        const container = document.getElementById("stage-buttons-container");
+        container.innerHTML = "";
+
+        let allPracticeCleared = true;
+        for(let i = 0; i < 6; i++) {
+            if(!clearedStages[stagesData[i].id]) allPracticeCleared = false;
+        }
+
+        stagesData.forEach((stg, idx) => {
+            if (stg.isSecret && !allPracticeCleared) return; 
+
+            let isCleared = clearedStages[stg.id];
+            let cardClass = stg.isSecret ? "secret-stg" : (isCleared ? "clear-done" : "");
+            let badgeText = isCleared ? "<span class='clear-badge'>✓ 演習完了</span>" : (stg.isSecret ? "⚠️ 一撃死・総力四連戦" : "全4陣 (総大将戦有)");
+            let labelName = stg.isSecret ? "🔥 究極裏試練" : "第0" + (idx+1) + "章";
+            
+            container.innerHTML += `
+                <div class="stage-card ${cardClass}" onclick="startNormalStage(${idx})">
+                    <div class="stage-num">${labelName}</div>
+                    <div class="stage-name">${stg.stageName}</div>
+                    <div style="font-size:11px; opacity:0.8;">${badgeText}</div>
+                </div>`;
+        });
+    }
+
+    function startNormalStage(idx) {
+        isTimeAttack = false;
+        currentStageIndex = idx;
+        currentStageObj = stagesData[idx];
+        currentQuizIndex = 0;
+        currentWave = 1;
+        playerHp = 2000;
+        
+        document.getElementById("home-screen").style.display = "none";
+        document.getElementById("battle-screen").style.display = "block";
+        document.getElementById("battle-timer-banner").style.display = "none";
+        document.getElementById("stage-title-banner").innerText = currentStageObj.stageName;
+        
+        if(currentStageObj.isSecret) {
+            document.getElementById("mode-rule-text").innerText = "⚠️ 裏ステージ極限ルール: 1回ミスで即敗北！";
+        } else {
+            document.getElementById("mode-rule-text").innerText = "通常戦ルール: 雑魚は4回、ボスは2回ミスで敗北";
+        }
+
+        spawnEnemy();
+        setupQuiz();
+    }
+
+    function spawnEnemy() {
+        const isBoss = (currentWave === maxWaves);
+        let enemyName = "";
+        let svgContent = "";
+
+        if (currentStageObj.isSecret) {
+            if (currentWave === 1) {
+                enemyName = "幻影・煉獄の大天狗"; enemyMaxHp = 1600;
+                svgContent = `<polygon points="100,20 160,160 40,160" fill="#7f0000"/><circle cx="100" cy="100" r="30" fill="#222"/>`;
+            } else if (currentWave === 2) {
+                enemyName = "幻影・凶変の八岐大蛇"; enemyMaxHp = 1600;
+                svgContent = `<path d="M40,100 Q100,20 160,100 T160,160" fill="none" stroke="#27ae60" stroke-width="12"/>`;
+            } else if (currentWave === 3) {
+                enemyName = "幻影・冥府の黒怨霊"; enemyMaxHp = 1800;
+                svgContent = `<rect x="50" y="50" width="100" height="100" fill="#2c3e50"/><circle cx="100" cy="100" r="25" fill="#000"/>`;
+            } else {
+                enemyName = currentStageObj.bossName; enemyMaxHp = 3200; 
+                svgContent = `
+                    <g transform="scale(1.2) translate(-15,-15)">
+                        <circle cx="100" cy="100" r="55" fill="#0d0d0d" stroke="#f1c40f" stroke-width="3"/>
+                        <polygon points="100,50 135,130 65,130" fill="#581845"/>
+                        <circle cx="90" cy="100" r="8" fill="red"/><circle cx="110" cy="100" r="8" fill="red"/>
+                    </g>`;
+            }
+        } else {
+            if (isBoss) {
+                enemyName = currentStageObj.bossName; enemyMaxHp = 1600;
+                svgContent = `<polygon points="100,30 150,150 50,150" fill="#8b0000"/><circle cx="100" cy="100" r="30" fill="#111"/>`;
+            } else {
+                enemyName = `隠世の飢餓鬼 (第${currentWave}陣)`; enemyMaxHp = 800;
+                svgContent = `<circle cx="100" cy="100" r="40" fill="#5c5c5c"/><line x1="80" y1="110" x2="120" y2="110" stroke="red" stroke-width="4"/>`;
+            }
+        }
+
+        enemyHp = enemyMaxHp;
+        document.getElementById("enemy-top-title").innerText = isBoss ? "⚠️ 決戦" : "妖魔";
+        document.getElementById("enemy-panel-name").innerText = enemyName;
+        
+        const enemyBar = document.getElementById("enemy-hp-bar");
+        enemyBar.className = isBoss || currentStageObj.isSecret ? "hp-bar-inner enemy-hp boss-hp" : "hp-bar-inner enemy-hp";
+        document.getElementById("enemy-sprite-container").innerHTML = `<svg class="enemy-svg" viewBox="0 0 200 200">${svgContent}</svg>`;
+
+        document.getElementById("wave-counter").innerText = `第 ${currentWave} 陣 / 全 ${maxWaves} 陣`;
+        updateHpDisplay();
+    }
+
+    function startTimeAttackMode() {
+        isTimeAttack = true; taTimeLeft = 60.0; taScore = 0; playerHp = 2000;
+        currentStageObj = { stageName: "🔥 連続漢字討伐の試練", quizList: [...hardQuizList].sort(() => Math.random() - 0.5) };
+        currentQuizIndex = 0;
+
+        document.getElementById("home-screen").style.display = "none";
+        document.getElementById("battle-screen").style.display = "block";
+        document.getElementById("battle-timer-banner").style.display = "flex";
+        document.getElementById("stage-title-banner").innerText = currentStageObj.stageName;
+        document.getElementById("mode-rule-text").innerText = "TAルール: ミスしてもペナルティなし！時間内に倒せ！";
+        document.getElementById("wave-counter").innerText = "無限追撃戦";
+        
+        document.getElementById("enemy-top-title").innerText = "試練の怨霊";
+        document.getElementById("enemy-panel-name").innerText = "神速の影武者";
+        document.getElementById("enemy-sprite-container").innerHTML = `<svg class="enemy-svg" viewBox="0 0 200 200"><rect x="50" y="50" width="100" height="100" fill="#222"/></svg>`;
+        
+        enemyHp = 99999; enemyMaxHp = 99999;
+        updateHpDisplay(); setupQuiz(); updateTaDisplay();
+
+        clearInterval(taInterval);
+        taInterval = setInterval(() => {
+            taTimeLeft -= 0.1;
+            if (taTimeLeft <= 0) { taTimeLeft = 0; endTimeAttack(); }
+            updateTaDisplay();
+        }, 100);
+    }
+
+    function updateTaDisplay() {
+        document.getElementById("ta-timer-display").innerText = `⏱️ 残り時間: ${taTimeLeft.toFixed(1)}秒`;
+        document.getElementById("ta-score-display").innerText = `🏆 正解数: ${taScore}問`;
+    }
+
+    function endTimeAttack() {
+        clearInterval(taInterval); isTimeAttack = false;
+        
+        let inputName = prompt(`✨ 時間終了！討伐数：${taScore}問\n\n討伐番付（ランキング）に刻むあなたの「名号（氏名）」を入力してください。`, "大和の剣士");
+        if (inputName === null || inputName.trim() === "") {
+            inputName = "名無しの剣豪";
+        } else {
+            inputName = inputName.trim().substring(0, 12); 
+        }
+
+        rankingList.push({
+            score: taScore,
+            title: currentTitle,
+            name: inputName
+        });
+        
+        // クラウドへ自動リアルタイム同期
+        syncToCloud();
+        showResult(`試練終了`, `お見事！今回の討伐数: ${taScore}問\n「${inputName}」の記録がクラウドに同期されました！`);
+    }
+
+    function judgeAnswer() {
+        const q = currentStageObj.quizList[currentQuizIndex];
+        const modal = document.getElementById("answer-result-screen");
+        const statusText = document.getElementById("ans-status-text");
+        const logComment = document.getElementById("ans-log-comment");
+        
+        document.getElementById("ans-large-kanji").innerText = q.kanji;
+        document.getElementById("ans-yomi-sub").innerText = `（よみ：${q.yomi}）`;
+        
+        if (currentInputString === q.kanji) {
+            statusText.innerText = "⭕ 正解";
+            statusText.className = "ans-status-header ans-status-correct";
+            logComment.innerText = `見事な運筆です！敵に強烈な一撃を浴びせました！`;
+            addLog(`⚔️ 大和武尊の攻撃！「${q.kanji}」を撃ち抜く。`, "log-player");
+            
+            if (isTimeAttack) {
+                taScore++;
+            } else {
+                enemyHp -= (enemyMaxHp / 2); 
+                if (enemyHp <= 0) enemyHp = 0;
+            }
+        } else {
+            statusText.innerText = "❌ 不正解";
+            statusText.className = "ans-status-header ans-status-wrong";
+            logComment.innerText = `形が乱れています。正しい漢字は「${q.kanji}」です。`;
+            
+            if (!isTimeAttack) {
+                if (currentStageObj.isSecret) {
+                    playerHp = 0;
+                    addLog(`💀 裏ステージの猛攻！一撃の致命傷を受けた！`, "log-enemy");
+                } else {
+                    const isBoss = (currentWave === maxWaves);
+                    if (isBoss) {
+                        playerHp -= 1000; 
+                        addLog(`👹 総大将の強襲！手痛い致命傷を負った！(HP1000減少)`, "log-enemy");
+                    } else {
+                        playerHp -= 500; 
+                        addLog(`⚔️ 妖魔の反撃！(HP500減少)`, "log-enemy");
+                    }
+                }
+                if (playerHp <= 0) playerHp = 0;
+            }
+        }
+        updateHpDisplay();
+        modal.style.display = "flex";
+    }
+
+    function closeAnswerModal() {
+        document.getElementById("answer-result-screen").style.display = "none";
+        
+        if (!isTimeAttack && playerHp <= 0) {
+            showResult("演習失敗", "体力が尽きました……。練習を積み重ねて再度挑みましょう！");
+            return;
+        }
+
+        if (!isTimeAttack && enemyHp <= 0) {
+            if (currentWave < maxWaves) {
+                currentWave++;
+                addLog(`✨ 敵を討伐！次の戦いへ連戦。（第${currentWave}陣）`, "log-system");
+                spawnEnemy();
+                advanceQuizIndex();
+                setupQuiz();
+            } else {
+                clearedStages[currentStageObj.id] = true;
+                updateTitleAndDisplay();
+
+                if (currentStageObj.isSecret) {
+                    showResult("🎉 神代の完全覇者", `素晴らしい！これまでのボス、精度2倍のHPを持つ神をも圧倒し、第七裏ステージを完全に攻略しました！`);
+                } else {
+                    showResult("演習クリア", `「${currentStageObj.stageName}」を無事クリアしました！`);
+                }
+            }
+        } else {
+            advanceQuizIndex();
+            setupQuiz();
+        }
+    }
+
+    function advanceQuizIndex() {
+        currentQuizIndex = (currentQuizIndex + 1) % currentStageObj.quizList.length;
+    }
+
+    function authAdmin() {
+        if (document.getElementById("admin-password-input").value === ADMIN_PASSWORD) {
+            document.getElementById("admin-auth-zone").style.display = "none";
+            document.getElementById("admin-content-zone").style.display = "block";
+            renderWordList();
+        } else {
+            alert("パスワードが異なります。");
+        }
+    }
+
+    function buildEditorSelector() {
+        const selector = document.getElementById("editor-stage-selector");
+        selector.innerHTML = "";
+        stagesData.forEach((stg, i) => {
+            selector.innerHTML += `<option value="${i}">${stg.stageName}</option>`;
+        });
+        selector.innerHTML += `<option value="hard">タイムアタック用漢字</option>`;
+    }
+
+    function onEditorStageChange() { renderWordList(); }
+
+    function renderWordList() {
+        const list = document.getElementById("word-list");
+        list.innerHTML = "";
+        const target = document.getElementById("editor-stage-selector").value;
+        let arr = (target === "hard") ? hardQuizList : stagesData[parseInt(target)].quizList;
+        arr.forEach((q, i) => {
+            list.innerHTML += `<div class="word-item"><span><strong>${q.kanji}</strong> (${q.yomi})</span><button class="del-btn" onclick="deleteQuizItem(${i})">削除</button></div>`;
+        });
+    }
+
+    function addQuizItem() {
+        const kanji = document.getElementById("add-kanji").value.trim();
+        const yomi = document.getElementById("add-yomi").value.trim();
+        const roma = document.getElementById("add-roma").value.trim();
+        if(!kanji || !yomi || !roma) return;
+        
+        const target = document.getElementById("editor-stage-selector").value;
+        if (target === "hard") {
+            hardQuizList.push({ kanji, yomi, roma });
+        } else {
+            stagesData[parseInt(target)].quizList.push({ kanji, yomi, roma });
+        }
+        document.getElementById("add-kanji").value = "";
+        document.getElementById("add-yomi").value = "";
+        document.getElementById("add-roma").value = "";
+        renderWordList();
+        buildHomeScreen();
+        
+        // 変更を即時クラウド共有
+        syncToCloud();
+    }
+
+    function deleteQuizItem(index) {
+        const target = document.getElementById("editor-stage-selector").value;
+        if (target === "hard") {
+            hardQuizList.splice(index, 1);
+        } else {
+            stagesData[parseInt(target)].quizList.splice(index, 1);
+        }
+        renderWordList();
+        buildHomeScreen();
+        
+        // 変更を即時クラウド共有
+        syncToCloud();
+    }
+
+    function startDraw(e) { drawing = true; currentStroke = []; const rect = canvas.getBoundingClientRect(); undoHistory.push(ctx.getImageData(0, 0, canvas.width, canvas.height)); ctx.beginPath(); ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top); currentStroke.push([Math.round(e.clientX - rect.left), Math.round(e.clientY - rect.top)]); }
+    function draw(e) { if (!drawing) return; const rect = canvas.getBoundingClientRect(); ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top); ctx.stroke(); currentStroke.push([Math.round(e.clientX - rect.left), Math.round(e.clientY - rect.top)]); }
+    function endDraw() { if (!drawing) return; drawing = false; if (currentStroke.length > 0) { allStrokes.push([currentStroke.map(p => p[0]), currentStroke.map(p => p[1])]); document.getElementById("stroke-counter").innerText = `画数: ${allStrokes.length}画`; } }
+    function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); allStrokes = []; undoHistory = []; document.getElementById("stroke-counter").innerText = `画数: 0画`; }
+    function undoCanvas() { if (undoHistory.length > 0) { ctx.putImageData(undoHistory.pop(), 0, 0); allStrokes.pop(); document.getElementById("stroke-counter").innerText = `画数: ${allStrokes.length}画`; } }
+    function deleteChar() { if (currentInputString.length > 0) { currentInputString = currentInputString.slice(0, -1); document.getElementById("recognize-preview").innerText = `入力中の文字: ${currentInputString || "＿"}`; } }
+    
+    function setupQuiz() { 
+        if (currentStageObj.quizList.length === 0) {
+            alert("問題が設定されていません。"); returnToHome(); return;
+        }
+        if (currentQuizIndex >= currentStageObj.quizList.length) currentQuizIndex = 0;
+        const q = currentStageObj.quizList[currentQuizIndex]; 
+        document.getElementById("target-roma").innerText = q.roma; 
+        document.getElementById("target-hint-yomi").innerText = q.yomi; 
+        currentInputString = ""; 
+        document.getElementById("recognize-preview").innerText = "入力中の文字: ＿"; 
+        clearCanvas(); 
+    }
+
+    function recognizeKanji() { 
+        if (allStrokes.length === 0) return; 
+        fetch('https://inputtools.google.com/request?ime=handwriting&app=autotrack', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "app_name": "crw", "device": "desktop", "input_type": "0", "options": "enable_pre_space", "requests": [{"writing_area_width": 220, "writing_area_height": 220, "language": "ja", "ink": allStrokes}] }) }).then(res => res.json()).then(data => { if (data[0] === "SUCCESS") { const bestMatch = data[1][0][1][0]; currentInputString += bestMatch; document.getElementById("recognize-preview").innerText = `入力中の文字: ${currentInputString}`; clearCanvas(); } }); 
+    }
+
+    function launchAttack() { if (currentInputString.length === 0) return; judgeAnswer(); }
+    function updateHpDisplay() { document.getElementById("player-hp-text").innerText = `HP: ${playerHp}/${playerMaxHp}`; document.getElementById("enemy-hp-text").innerText = `HP: ${enemyHp}/${enemyMaxHp}`; document.getElementById("player-hp-bar").style.width = (playerHp / playerMaxHp * 100) + "%"; document.getElementById("enemy-hp-bar").style.width = (enemyHp / enemyMaxHp * 100) + "%"; }
+    function showResult(title, text) { document.getElementById("result-title").innerText = title; document.getElementById("result-text").innerText = text; document.getElementById("result-screen").style.display = "flex"; }
+    function nextStageOrReset() { clearInterval(taInterval); document.getElementById("result-screen").style.display = "none"; document.getElementById("battle-screen").style.display = "none"; document.getElementById("home-screen").style.display = "flex"; buildHomeScreen(); }
+    function returnToHome() { clearInterval(taInterval); document.getElementById("battle-screen").style.display = "none"; document.getElementById("home-screen").style.display = "flex"; }
+    function addLog(msg, cl) { const box = document.getElementById("log-box"); box.innerHTML += `<div class="log-entry ${cl}">${msg}</div>`; box.scrollTop = box.scrollHeight; }
+</script>
+</body>
+</html>
